@@ -12,7 +12,7 @@ public class OfdToImgJNI {
 
     static final double convertCount = 1;
 
-    public native int initConverter();
+    public native int initConverter(String licence);
 
     public native void finalizeConverter(String taskId);
 
@@ -27,18 +27,27 @@ public class OfdToImgJNI {
         }
         System.out.println(System.getProperty("java.library.path"));
 
-        System.loadLibrary("ofdview");
+        System.loadLibrary("yh_ofdview");
         OfdToImgJNI convertJni = new OfdToImgJNI();
-        int ret = convertJni.initConverter();
+        // 授权信息，需要根据自己的机器去生成，找闰土生成.
+        int ret = convertJni.initConverter("LDOudv2kXJd8u2NDwUpKhMZEXUVzADIboH+ZgRcQPaPwTkjOmjXUAvIYCwM0adS+3DH5vciGSETXulEnoe5UKyQn7Jj/qh348ER2D6KyvDmMEFLhZ0gMrso2Qu20fmrhQqfTTEIusGmIrAq4i8o+PXwd6FMVzexq+XW1O/6/JDw=");
+        if (ret != 0) {
+            System.err.println("init error");
+            return;
+        }
         String templateDir = args[0];
         byte[] templateOFDData = getFileByteArray(new File(templateDir));
         ret = convertJni.openFile("001", templateOFDData, 0, 0);
+        if (ret != 0) {
+            System.err.println("open file error");
+            return;
+        }
         System.out.println("JAVA: open ok");
         List<Callable<Integer>> list = null;
         ExecutorService cachedThreadPool = Executors.newFixedThreadPool(1);
         long cc = System.currentTimeMillis();
         convert(convertJni, 0);
-        //convertJni.finalizeConverter("001");
+        convertJni.finalizeConverter("001");
         return;
 //    try {
 //      list = getCallableList(convertJni);
@@ -73,7 +82,8 @@ public class OfdToImgJNI {
     }
 
     private static int convert(OfdToImgJNI convertJni, int i) throws IOException {
-        byte[] resultData = convertJni.convert("001", i, "jpg", 0, 0);
+        // FIXME: 这里暂时只支持导出png图片.
+        byte[] resultData = convertJni.convert("001", i, "png", 0, 0);
 
         if (resultData != null) {
             System.out.println("successfully " + i + ".jpg  " + resultData.length);
