@@ -86,14 +86,14 @@ public class OfdToImgJNI {
         byte[] resultData = convertJni.convert("001", i, "png", 0, 0);
 
         if (resultData != null) {
-            System.out.println("successfully " + i + ".jpg  " + resultData.length);
+            System.out.println("successfully " + i + ".png  " + resultData.length);
         }
 
         if (resultData != null) {
-            OutputStream resultOutStream = new FileOutputStream("./" + i + ".jpg");
+            OutputStream resultOutStream = new FileOutputStream("./" + i + ".png");
             resultOutStream.write(resultData);
             resultOutStream.close();
-            System.out.println("write result ofd successfully " + i + ".jpg");
+            System.out.println("write result ofd successfully " + i + ".png");
         }
         return 0;
     }
