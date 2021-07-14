@@ -83,7 +83,7 @@ public class OfdToImgJNI {
 
     private static int convert(OfdToImgJNI convertJni, int i) throws IOException {
         // FIXME: 这里暂时只支持导出png图片.
-        byte[] resultData = convertJni.convert("001", i, "png", 0, 0);
+        byte[] resultData = convertJni.convert("001", i, "jpg", 0, 0);
 
         if (resultData != null) {
             System.out.println("successfully " + i + ".png  " + resultData.length);
