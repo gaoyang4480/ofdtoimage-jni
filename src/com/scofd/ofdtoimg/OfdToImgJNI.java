@@ -26,7 +26,11 @@ public class OfdToImgJNI {
 
     public native int openFile(String taskId, byte[] OFDData, int verIndex, int docIndex, Integer totalPageNum);
 
+    public native int openFileByPath(String taskId, String srcFilePath, int verIndex, int docIndex, Integer totalPageNum);
+
     public native byte[] convert(String taskId, int pageIndex, String format, int width, int dpi);
+
+    public native byte[] convertByEleType(String taskId, int pageIndex, String format, int width, int dpi, int eleType);
 
     public native byte[] getText(String taskId, int pageIndex);
 
@@ -36,6 +40,16 @@ public class OfdToImgJNI {
 
     public native boolean convertOFDToPDFByData(byte[] srcOFDFileData, String outputPDFFilePath, int docIndex, int verIndex, int beginPageIndex, int endPageIndex);
 
+    public native byte[] stitchPictures(List<byte[]> srcImageDataList, String destImageFormat, int dpi);
+
+    public native byte[] stitchPicturesWithScale(List<byte[]> srcImageDataList, String destImageFormat, int dpi, float scale);
+
+    public native PageSize getPageSize(String taskId, int pageIndex);
+
+    public native String getMetaData(String taskId);
+
+    public native String getMachineCode();
+
     public static void main(String[] args) throws IOException {
         if (args.length < 1) {
             System.err.println("Usage: <目标OFD文件路径>");
@@ -44,8 +58,17 @@ public class OfdToImgJNI {
         System.out.println(System.getProperty("java.library.path"));
 
         //System.loadLibrary("libexpat");
+        System.loadLibrary("zlib");
+        System.loadLibrary("libc++");
+        System.loadLibrary("absl");
+        System.loadLibrary("icuuc");
+        System.loadLibrary("partition_alloc");
+        System.loadLibrary("pdfium");
         System.loadLibrary("yh_ofdview");
         OfdToImgJNI convertJni = new OfdToImgJNI();
+
+        String s = convertJni.getMachineCode();
+
         // 授权信息，需要根据自己的机器去生成，找闰土生成.
 //        while (true) {
 //            System.out.println("init begin");
@@ -58,13 +81,38 @@ public class OfdToImgJNI {
 //            convertJni.finalizeConverter();
 //            System.out.println("finalize end");
 //        }
-        System.err.println("111111111111");
-        int ret = convertJni.initConverter("");
+        int ret = convertJni.initConverter("11111111");
         if (ret != 0) {
             System.err.println("init error");
             return;
         }
-        System.err.println("111111111111");
+
+//        List<byte[]> srcImageDataList = new ArrayList<>();
+
+//        byte[] srcImageData1 = getFileByteArray(new File("C:\\Users\\gaoyang\\Pictures\\1.jpg"));
+//        byte[] srcImageData2 = getFileByteArray(new File("C:\\Users\\gaoyang\\Pictures\\2.jpg"));
+//        byte[] srcImageData3 = getFileByteArray(new File("C:\\Users\\gaoyang\\Pictures\\3.jpg"));
+//        srcImageDataList.add(srcImageData1);
+//        srcImageDataList.add(srcImageData2);
+//        srcImageDataList.add(srcImageData3);
+
+//        for (File imgFile : new File("C:\\Users\\gaoyang\\Pictures\\10-ofd").listFiles()) {
+//            byte[] srcImageData = getFileByteArray(imgFile);
+//            srcImageDataList.add(srcImageData);
+//        }
+//
+//        long beginTime = System.currentTimeMillis();
+//        //byte[] stitchImageData = convertJni.stitchPicturesWithScale(srcImageDataList, "jpg", 96, 2.0f);
+//        byte[] stitchImageData = convertJni.stitchPictures(srcImageDataList, "jpg", 96);
+//        long endTime = System.currentTimeMillis();
+//        long coustTime = endTime - beginTime;
+//        System.out.println("stitchPictures time: " + coustTime);
+//        if (stitchImageData != null) {
+//            OutputStream resultOutStream = new FileOutputStream("stitch.jpg");
+//            resultOutStream.write(stitchImageData);
+//            resultOutStream.close();
+//        }
+
         templateDir = args[0];
 
 //        boolean result = convertJni.convertOFDToPDFByPath(templateDir, "./output.pdf", -1, -1, -1, -1);
@@ -75,13 +123,17 @@ public class OfdToImgJNI {
 //            System.out.println("fontFilePath:" + fontFilePath);
 //        }
 
-//        templateOFDData = getFileByteArray(new File(templateDir));
-        //Integer totalPageNum = 0;
-//        ret = convertJni.openFile("001", templateOFDData, 0, 0, totalPageNum);
-//        if (ret != 0) {
-//            System.err.println("open file error");
-//            return;
-//        }
+        //templateOFDData = getFileByteArray(new File(templateDir));
+
+        String taskId = "001";
+        ret = convertJni.openFileByPath(taskId, templateDir, 0, 0, totalPageNum);
+        if (ret != 0) {
+            System.err.println("open file error");
+            return;
+        }
+
+//        PageSize pageSize = convertJni.getPageSize(taskId, 0);
+//        String metaDataStr = convertJni.getMetaData(taskId);
 
 //        byte[] text = convertJni.getText("001", 0);
 //        System.out.println(new String(text));
@@ -125,7 +177,7 @@ public class OfdToImgJNI {
 
     private static List<Callable<Integer>> getCallableList(OfdToImgJNI convertJni) throws Exception {
         List<Callable<Integer>> resultList = new ArrayList<>();
-        for (int j = 0; j < convertCount; j++) {
+        for (int j = 0; j < 1; j++) {
             final int i = j;
 //            for (int k = 0; k < totalPageNum; k++) {
 //                final int m = k;
@@ -141,33 +193,36 @@ public class OfdToImgJNI {
     }
 
     private static int convert(OfdToImgJNI convertJni, int i) throws IOException {
+        System.out.println("i:" + i);
 //        int ret = convertJni.initConverter("LDOudv2kXJd8u2NDwUpKhMZEXUVzADIboH+ZgRcQPaPwTkjOmjXUAvIYCwM0adS+3DH5vciGSETXulEnoe5UKyQn7Jj/qh348ER2D6KyvDmMEFLhZ0gMrso2Qu20fmrhQqfTTEIusGmIrAq4i8o+PXwd6FMVzexq+XW1O/6/JDw=");
 //        if (ret != 0) {
 //            System.err.println("init error");
 //            return -1;
 //        }
 
-        byte[] templateOFDData = getFileByteArray(new File(templateDir));
+//        byte[] templateOFDData = getFileByteArray(new File(templateDir));
 
-        String taskId = "" + i;
-        Integer totalPageNum = new Integer(0);
-        int ret = convertJni.openFile(taskId, templateOFDData, 0, 0, totalPageNum);
-        if (ret != 0) {
-            System.err.println("open file error");
-            return -1;
-        }
+//        String taskId = "" + i;
+//        Integer totalPageNum = new Integer(0);
+//        int ret = convertJni.openFileByPath(taskId, templateDir, 0, 0, totalPageNum);
+//        if (ret != 0) {
+//            System.err.println("open file error");
+//            return -1;
+//        }
 
-        //String taskId = "001";
+        String taskId = "001";
 
         //System.out.println("111111111");
-        for (int j = 0; j < totalPageNum; ++j) {
-            byte[] resultData = convertJni.convert(taskId, j, "png", 0, 96);
+        //for (int j = 0; j < 1; ++j)
+        {
+//            byte[] resultData = convertJni.convert(taskId, i, "svg", 0, 96);
+            byte[] resultData = convertJni.convertByEleType(taskId, i, "svg", 0, 96, 0x1);
             if (resultData != null) {
                 //System.out.println("successfully " + i + ".png  " + resultData.length);
-                OutputStream resultOutStream = new FileOutputStream("./" + i + "_" + j + ".png");
+                OutputStream resultOutStream = new FileOutputStream("./" + i + ".svg");
                 resultOutStream.write(resultData);
                 resultOutStream.close();
-                System.out.println("write result ofd successfully " + i + ".png");
+                System.out.println("write result ofd successfully " + i + ".jpg");
             }
         }
 
@@ -178,8 +233,7 @@ public class OfdToImgJNI {
 //            System.out.println("write result ofd successfully " + i + ".png");
 //        }
 
-        convertJni.finalizeTask(taskId);
-
+        //convertJni.finalizeTask(taskId);
         return 0;
     }
 
